@@ -60,9 +60,12 @@ export const createOrJoinSocket = (
   if (optionsRef.current.share) {
     let clearSocketIoPingInterval: ((() => void) | null) = null;
     if (sharedWebSockets[url] === undefined) {
-      sharedWebSockets[url] = optionsRef.current.eventSourceOptions ?
-        new EventSource(url, optionsRef.current.eventSourceOptions) :
-        new WebSocket(url, optionsRef.current.protocols);
+      sharedWebSockets[url] = optionsRef.current.eventSourceOptions
+        ? new EventSource(url, optionsRef.current.eventSourceOptions)
+        : isReactNative
+          // @ts-ignore third argument is only available in React Native
+          ? new WebSocket(url, optionsRef.current.protocols, { headers: optionsRef.current.headers ?? {} })
+          : new WebSocket(url, optionsRef.current.protocols);
       webSocketRef.current = sharedWebSockets[url];
       setReadyState(ReadyState.CONNECTING);
       clearSocketIoPingInterval = attachSharedListeners(
@@ -83,7 +86,7 @@ export const createOrJoinSocket = (
       reconnectCount,
       reconnect: startRef,
     };
-  
+
     addSubscriber(url, subscriber);
 
     return cleanSubscribers(
@@ -94,9 +97,12 @@ export const createOrJoinSocket = (
       clearSocketIoPingInterval,
     );
   } else {
-    webSocketRef.current = optionsRef.current.eventSourceOptions ?
-      new EventSource(url, optionsRef.current.eventSourceOptions) :
-      new WebSocket(url, optionsRef.current.protocols);
+    webSocketRef.current = optionsRef.current.eventSourceOptions
+      ? new EventSource(url, optionsRef.current.eventSourceOptions)
+      : isReactNative
+        // @ts-ignore third argument is only available in React Native
+        ? new WebSocket(url, optionsRef.current.protocols, { headers: optionsRef.current.headers ?? {} })
+        : new WebSocket(url, optionsRef.current.protocols);
     setReadyState(ReadyState.CONNECTING);
     if (!webSocketRef.current) {
       throw new Error('WebSocket failed to be created');
